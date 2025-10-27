@@ -1,0 +1,33 @@
+body { 
+font-family: Arial, sans-serif; 
+padding: 12px; 
+}
+
+.container {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+.info {
+    max-width: 360px;
+}
+
+canvas {
+    border: 1px solid #ccc;
+}
+
+.controls {
+    margin-top: 8px;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+pre {
+    background: #f5f5f5;
+    padding: 8px;
+}
+    
