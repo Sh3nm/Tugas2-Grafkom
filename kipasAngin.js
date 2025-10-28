@@ -51,33 +51,8 @@ var LODLevels = {
 };
 
 // Motion blur
-var isMotionBlurEnabled = true;
+var isMotionBlurEnabled = false;
 var blurAmount = 0;
-
-// theme colors
-var themes = {
-    classic: {
-        base: vec4(0.2, 0.2, 0.2, 1),
-        frame: vec4(0.15, 0.15, 0.15, 1),
-        blade: vec4(0.5, 0.5, 0.5, 1),
-        motor: vec4(0.25, 0.25, 0.25, 1),
-        rod: vec4(0.3, 0.3, 0.3, 1)
-    },
-    modern: {
-        base: vec4(0.7, 0.7, 0.7, 1),
-        frame: vec4(0.6, 0.6, 0.6, 1),
-        blade: vec4(0.8, 0.8, 0.8, 1),
-        motor: vec4(0.65, 0.65, 0.65, 1),
-        rod: vec4(0.7, 0.7, 0.7, 1)
-    },
-    retro: {
-        base: vec4(0.6, 0.4, 0.2, 1),
-        frame: vec4(0.5, 0.3, 0.1, 1),
-        blade: vec4(0.7, 0.5, 0.3, 1),
-        motor: vec4(0.55, 0.35, 0.15, 1),
-        rod: vec4(0.6, 0.4, 0.2, 1)
-    }
-};
 
 // jumlah vertex tiap bagian (untuk drawArrays dengan offset)
 var baseVertices = 0;
@@ -208,6 +183,11 @@ window.onload = function init() {
     initAudio();
     initCameraControls();
 
+    // Set initial camera position for better view of back cover
+    cameraTheta = Math.PI / 4;  // 45 derajat
+    cameraPhi = Math.PI / 3;    // 60 derajat
+    cameraRadius = 3.5;         // Sedikit lebih jauh untuk melihat keseluruhan
+
     // Initialize performance monitoring
     lastFPSUpdate = performance.now();
     document.getElementById('vertexCount').textContent = points.length;
@@ -283,12 +263,6 @@ window.onload = function init() {
     lastSpeedChange = Date.now();
   };
 
-  // Theme selector
-  document.getElementById("themeSelect").onchange = function(e) {
-    buildFanGeometry(); // Rebuild with new colors
-    initBuffers();
-  };
-
   // Night mode toggle
   document.getElementById("toggleNightMode").onclick = toggleNightMode;
 
@@ -339,58 +313,59 @@ function initBuffers() {
   gl.enableVertexAttribArray(aColor);
 }
 
-// ---------------- GEOMETRY BUILDER ----------------
-// ========================================
-// GEOMETRY BUILDER - Table Fan Model
-// ========================================
-// Struktur Lengkap (Referensi: Old Table Fan):
-// 1. Base - Dudukan berat di bawah
-// 2. Stand/Pole - Tiang vertikal penopang
-// 3. Motor Housing - Badan motor belakang (silinder besar)
-// 4. Frame Guard - Pelindung kawat depan (rings + spokes)
-// 5. Hub - Rotor tengah
-// 6. 4 Blades - Bilah kipas yang berputar
-// ========================================
+
 
 function buildFanGeometry() {
   points = []; normals = []; colors = [];
 
-  // 1. BASE - Dudukan berat berbentuk cakram di bawah
   var start = points.length;
-//   addCylinderZ(0.4, 0.1, 24, vec3(0, -0.8, 0), vec4(0.2, 0.2, 0.2, 1));
-//   baseVertices = points.length - start;
-
-  // 2. STAND/POLE - Tiang vertikal penopang
   start = points.length;
-//   addCylinderY(0.05, 1.0, 16, vec3(0, -0.3, 0), vec4(0.3, 0.3, 0.3, 1));
-//   hangingRodVertices = points.length - start;
 
-  // 3. MOTOR HOUSING - Badan motor belakang (silinder besar)
+  //MOTOR HOUSING - Badan motor belakang (silinder besar)
   start = points.length;
   addCylinderZ(0.3, 0.25, 24, vec3(0, 0.2, -0.15), vec4(0.25, 0.25, 0.25, 1));
   motorHousingVertices = points.length - start;
 
-  // 3.5 HANGING ROD - Penyangga menggantung dari atas, menempel di belakang motor
+  //HANGING ROD - Penyangga menggantung dari atas, menempel di belakang motor
   start = points.length;
   addCylinderY(0.02, 1.5, 12, vec3(0, 0.95, -0.15), vec4(0.3, 0.3, 0.3, 1));
   hangingRodVertices = points.length - start;
 
-  // 4. FRAME GUARD - Pelindung kawat depan
+  //FRAME GUARD - Pelindung kawat depan dan belakang
   start = points.length;
-  // Ring luar
+  
+  //FRONT GUARD
+  // Ring luar depan
   addCircleRingXY(0.55, 0.02, 60, vec3(0, 0.2, 0.05), vec4(0.15, 0.15, 0.15, 1));
-  // Ring tengah
+  // Ring tengah depan
   addCircleRingXY(0.35, 0.015, 48, vec3(0, 0.2, 0.05), vec4(0.15, 0.15, 0.15, 1));
-  // Spokes radial
-  addSpokesXY(0.55, 8, vec3(0, 0.2, 0.05), vec4(0.15, 0.15, 0.15, 1));
+  // Ring kecil depan (dekat hub)
+  addCircleRingXY(0.15, 0.01, 32, vec3(0, 0.2, 0.05), vec4(0.15, 0.15, 0.15, 1));
+  // Spokes radial depan (16 spoke untuk detail lebih baik)
+  addSpokesXY(0.55, 16, vec3(0, 0.2, 0.05), vec4(0.15, 0.15, 0.15, 1));
+  
+  //BACK GUARD
+  // Ring luar belakang
+  addCircleRingXY(0.55, 0.02, 60, vec3(0, 0.2, -0.25), vec4(0.12, 0.12, 0.12, 1));
+  // Ring tengah belakang
+  addCircleRingXY(0.35, 0.015, 48, vec3(0, 0.2, -0.25), vec4(0.12, 0.12, 0.12, 1));
+  // Ring kecil belakang
+  addCircleRingXY(0.15, 0.01, 32, vec3(0, 0.2, -0.25), vec4(0.12, 0.12, 0.12, 1));
+  // Spokes radial belakang
+  addSpokesXY(0.55, 16, vec3(0, 0.2, -0.25), vec4(0.12, 0.12, 0.12, 1));
+  
+  //CONNECTING RINGS
+  // Ring penghubung luar (antara guard depan dan belakang)
+  addConnectingRing(0.55, 0.02, 60, vec3(0, 0.2, 0.05), vec3(0, 0.2, -0.25), vec4(0.13, 0.13, 0.13, 1));
+  
   frameVertices = points.length - start;
   
-  // 5. HUB - Rotor tengah (pas di tengah blade, sedikit lebih ke atas)
+  //HUB - Rotor tengah (pas di tengah blade, sedikit lebih ke atas)
   start = points.length;
   addCylinderZ(0.08, 0.06, 20, vec3(0, 0.25, 0.0), vec4(0.35, 0.35, 0.35, 1));
   rotorVertices = points.length - start;
 
-  // 6. BLADE - Satu blade (akan digambar 4x dengan offset 90°)
+  //BLADE - Satu blade (akan digambar 4x dengan offset 90°)
   start = points.length;
   addBladeXY(0.08, 0.5, 0.12, vec4(0.5, 0.5, 0.5, 1));
   bladeVertices = points.length - start;
@@ -508,7 +483,6 @@ function addCylinderY(radius, height, segments, center, color) {
 }
 
 // Fungsi untuk membuat Cylinder dengan normal radial yang benar
-// Digunakan untuk: Hanging Rod, Motor Housing, Rotor
 function addCylinder(radius, height, segments, center, color) {
   for (let i = 0; i < segments; i++) {
     let theta1 = (i / segments) * 2 * Math.PI;
@@ -539,7 +513,6 @@ function addCylinder(radius, height, segments, center, color) {
 }
 
 // Fungsi untuk membuat Circle Ring di plane XY (menghadap ke user)
-// Digunakan untuk: Frame lingkaran yang mengelilingi blade
 function addCircleRingXY(radius, thickness, segments, center, color) {
   let inner = radius - thickness;
   for (let i=0; i<segments; i++) {
@@ -595,7 +568,6 @@ function addCircleRingXY(radius, thickness, segments, center, color) {
 }
 
 // Fungsi untuk membuat Cylinder dengan sumbu Z (menghadap ke user)
-// Digunakan untuk: Hub/Rotor tengah
 function addCylinderZ(radius, height, segments, center, color) {
   for (let i = 0; i < segments; i++) {
     let theta1 = (i / segments) * 2 * Math.PI;
@@ -640,9 +612,7 @@ function addCylinderZ(radius, height, segments, center, color) {
   }
 }
 
-// ========================================
 // addSpokesXY - Spokes radial untuk frame guard (di plane XY)
-// ========================================
 function addSpokesXY(radius, numSpokes, center, color) {
   var spokeThickness = 0.01;
   
@@ -677,8 +647,65 @@ function addSpokesXY(radius, numSpokes, center, color) {
   }
 }
 
+// Fungsi untuk membuat ring penghubung antara guard depan dan belakang
+function addConnectingRing(radius, thickness, segments, centerFront, centerBack, color) {
+    let inner = radius - thickness;
+    
+    for (let i = 0; i < segments; i++) {
+        let theta1 = (i / segments) * 2 * Math.PI;
+        let theta2 = ((i+1) / segments) * 2 * Math.PI;
+        
+        // Points pada ring depan
+        let p1oF = vec4(centerFront[0] + radius*Math.cos(theta1), 
+                       centerFront[1] + radius*Math.sin(theta1), 
+                       centerFront[2], 1);
+        let p2oF = vec4(centerFront[0] + radius*Math.cos(theta2), 
+                       centerFront[1] + radius*Math.sin(theta2), 
+                       centerFront[2], 1);
+        let p1iF = vec4(centerFront[0] + inner*Math.cos(theta1), 
+                       centerFront[1] + inner*Math.sin(theta1), 
+                       centerFront[2], 1);
+        let p2iF = vec4(centerFront[0] + inner*Math.cos(theta2), 
+                       centerFront[1] + inner*Math.sin(theta2), 
+                       centerFront[2], 1);
+        
+        // Points pada ring belakang
+        let p1oB = vec4(centerBack[0] + radius*Math.cos(theta1), 
+                       centerBack[1] + radius*Math.sin(theta1), 
+                       centerBack[2], 1);
+        let p2oB = vec4(centerBack[0] + radius*Math.cos(theta2), 
+                       centerBack[1] + radius*Math.sin(theta2), 
+                       centerBack[2], 1);
+        let p1iB = vec4(centerBack[0] + inner*Math.cos(theta1), 
+                       centerBack[1] + inner*Math.sin(theta1), 
+                       centerBack[2], 1);
+        let p2iB = vec4(centerBack[0] + inner*Math.cos(theta2), 
+                       centerBack[1] + inner*Math.sin(theta2), 
+                       centerBack[2], 1);
+        
+        // Normal untuk bagian luar
+        let nx1 = Math.cos(theta1), ny1 = Math.sin(theta1);
+        let nx2 = Math.cos(theta2), ny2 = Math.sin(theta2);
+        let n1 = vec3(nx1, ny1, 0);
+        let n2 = vec3(nx2, ny2, 0);
+        
+        // Connecting faces - outer surface
+        points.push(p1oF, p1oB, p2oB, p1oF, p2oB, p2oF);
+        normals.push(n1, n1, n2, n1, n2, n2);
+        for (let k=0; k<6; k++) { colors.push(color); }
+        
+        // Normal untuk bagian dalam
+        let n1i = vec3(-nx1, -ny1, 0);
+        let n2i = vec3(-nx2, -ny2, 0);
+        
+        // Connecting faces - inner surface
+        points.push(p1iF, p2iB, p1iB, p1iF, p2iF, p2iB);
+        normals.push(n1i, n2i, n1i, n1i, n2i, n2i);
+        for (let k=0; k<6; k++) { colors.push(color); }
+    }
+}
+
 // Fungsi untuk membuat jari-jari/spokes dari pusat ke tepi frame
-// Digunakan untuk: Frame/Guard (8 spokes radial)
 function addFrameSpokes(radius, numSpokes, center, color) {
   let thickness = 0.015;
   for (let i = 0; i < numSpokes; i++) {
@@ -702,8 +729,6 @@ function addFrameSpokes(radius, numSpokes, center, color) {
 }
 
 // Fungsi untuk membuat Curved Blade (blade melengkung dengan 12 segmen)
-// Blade dimulai dari rotor (r=0.15) sampai dekat frame (r=0.9)
-// Memiliki kelengkungan/pitch angle untuk efek aerodinamis
 function addCurvedBlade(color) {
   let segments = 12;
   let radiusStart = 0.25;
@@ -754,9 +779,6 @@ function addCurvedBlade(color) {
 }
 
 // Fungsi untuk membuat Blade di plane XY (menghadap ke user)
-// radiusStart: mulai dari hub tengah
-// radiusEnd: berakhir sebelum frame
-// width: lebar blade
 function addBladeXY(radiusStart, radiusEnd, width, color) {
   let thick = 0.03; // ketebalan blade (kedalaman Z)
   
@@ -765,7 +787,6 @@ function addBladeXY(radiusStart, radiusEnd, width, color) {
   let widthTip = width * 0.4; // lebar di ujung (40% dari pangkal)
   
   // Blade berada di sumbu Y positif (mengarah ke atas)
-  // 8 vertex untuk trapesium pipih
   let v = [
     // Depan (z = thick/2, menghadap user)
     vec4(-widthBase/2, radiusStart, thick/2, 1),        // 0: kiri-pangkal
@@ -829,21 +850,14 @@ function render() {
 
   let offset = 0;
 
-  // ===== 1. BASE (Static - dudukan bawah, tidak ikut yaw) =====
+  // BASE (Static - dudukan bawah, tidak ikut yaw)
   modelViewMatrix = viewMatrix;
   gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix));
   gl.uniformMatrix3fv(normalMatrixLoc, false, flatten(normalMatrix(modelViewMatrix)));
   if (baseVertices>0) gl.drawArrays(gl.TRIANGLES, offset, baseVertices);
   offset += baseVertices;
 
-  // ===== 2. STAND/POLE (Static - tiang vertikal, tidak ikut yaw) =====
-//   gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix));
-//   gl.uniformMatrix3fv(normalMatrixLoc, false, flatten(normalMatrix(modelViewMatrix)));
-//   if (hangingRodVertices>0) gl.drawArrays(gl.TRIANGLES, offset, hangingRodVertices);
-//   offset += hangingRodVertices;
-
   // Yaw transformation untuk semua komponen kipas (motor housing, frame, hub, blade)
-  // Rotasi pada sumbu Y dengan pusat di (0, 0.2, 0) - posisi motor housing
   let yawTransform = mult(
     translate(0, 0.2, 0),
     mult(
@@ -853,26 +867,25 @@ function render() {
   );
   let yawMV = mult(viewMatrix, yawTransform);
 
-  // ===== 3. MOTOR HOUSING (Dengan yaw rotation) =====
+  // MOTOR HOUSING (Dengan yaw rotation)
   gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(yawMV));
   gl.uniformMatrix3fv(normalMatrixLoc, false, flatten(normalMatrix(yawMV)));
   if (motorHousingVertices>0) gl.drawArrays(gl.TRIANGLES, offset, motorHousingVertices);
   offset += motorHousingVertices;
 
-  // ===== 3.5 HANGING ROD (Dengan yaw rotation) =====
+  // HANGING ROD (Dengan yaw rotation)
   gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(yawMV));
   gl.uniformMatrix3fv(normalMatrixLoc, false, flatten(normalMatrix(yawMV)));
   if (hangingRodVertices>0) gl.drawArrays(gl.TRIANGLES, offset, hangingRodVertices);
   offset += hangingRodVertices;
 
-  // ===== 4. FRAME GUARD (Dengan yaw rotation) =====
+  // FRAME GUARD (Dengan yaw rotation)
   gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(yawMV));
   gl.uniformMatrix3fv(normalMatrixLoc, false, flatten(normalMatrix(yawMV)));
   if (frameVertices>0) gl.drawArrays(gl.TRIANGLES, offset, frameVertices);
   offset += frameVertices;
 
-  // ===== 5. HUB TENGAH (Rotor berputar 360° di tempat, tidak ikut blade rotation) =====
-  // Rotor berputar pada posisinya sendiri (0, 0.25, 0) dengan rotasi pada sumbu Z
+  // HUB TENGAH (Rotor berputar 360° di tempat, tidak ikut blade rotation)
   let hubTransform = mult(
     translate(0, 0.25, 0),
     mult(
@@ -886,7 +899,7 @@ function render() {
   if (rotorVertices>0) gl.drawArrays(gl.TRIANGLES, offset, rotorVertices);
   offset += rotorVertices;
 
-  // ===== 6. BLADES (Dengan yaw + translasi ke atas + blade rotation, 4 blade offset 0°, 90°, 180°, 270°) =====
+  // BLADES (Dengan yaw + translasi ke atas + blade rotation, 4 blade offset 0°, 90°, 180°, 270°)
   let numBlades = 4;
   for (let i=0; i<numBlades; i++) {
     // Translasi ke atas (Y=0.25) untuk sejajarkan dengan rotor, lalu rotasi blade
