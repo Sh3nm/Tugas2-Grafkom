@@ -1,24 +1,75 @@
 body { 
-font-family: Arial, sans-serif; 
-padding: 12px; 
+    font-family: Inter, Arial, sans-serif;
+    padding: 18px;
+    background: #fafafa;
+    color: #222;
 }
 
 .container {
     display: flex;
-    gap: 20px;
+    gap: 24px;
     align-items: flex-start;
 }
 
 .info {
-    max-width: 360px;
+    width: 340px;
+    background: #ffffff;
+    border: 1px solid #e6e6e6;
+    padding: 14px;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(20,20,30,0.04);
+}
+
+.canvas-wrap {
+    flex: 1 1 auto;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
 }
 
 canvas {
-    border: 1px solid #ccc;
+        border: 1px solid #dcdcdc;
+        background: #ffffff;
+        border-radius: 6px;
+        max-width: 100%;
+        height: auto;
+        box-shadow: 0 2px 8px rgba(30,30,50,0.06);
 }
 
 .controls {
-    margin-top: 8px;
+        margin-top: 12px;
+}
+
+.control-group {
+    margin-bottom: 12px;
+    padding: 10px;
+    background: #fafafa;
+    border: 1px solid #f0f0f0;
+    border-radius: 6px;
+}
+
+.control-group label strong { font-size: 13px; }
+
+.speed-buttons { display:flex; gap:8px; margin:8px 0 6px 0; }
+.speed-buttons button {
+    padding:6px 10px; border-radius:6px; border:1px solid #dcdcdc; background:#fff; cursor:pointer;
+}
+.speed-buttons button:hover{ background:#f6f6f6 }
+
+input[type="range"] { width:100%; }
+
+.performance-stats { margin-top:10px; font-size:12px; color:#666; }
+
+.oscillation-controls { margin-top:8px; display:flex; flex-direction:column; gap:6px; }
+
+.camera-info { font-size:12px; color:#666; margin-top:8px; }
+
+pre { background: #f9f9f9; padding: 12px; border-radius: 6px; overflow:auto; }
+
+/* Small-screen adjustments */
+@media (max-width: 900px) {
+    .container { flex-direction: column; }
+    .info { width: 100%; }
 }
 
 img {
@@ -30,4 +81,3 @@ pre {
     background: #f5f5f5;
     padding: 8px;
 }
-    
