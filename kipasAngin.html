@@ -27,68 +27,26 @@
 
       <h4>Desain Tree Hierarchical</h4>
       <pre style="font-size: 11px; line-height: 1.5; background: #f5f5f5; padding: 12px; border-radius: 5px;">
-<!-- <strong style="color: #2c3e50;">Table Fan (Old Table Fan Model)</strong>
-│
-├─ <strong style="color: #34495e;">1. Base (Static)</strong>
-│   ├─ Geometri: Cylinder Z-axis (r=0.4, h=0.1)
-│   ├─ Posisi: (0, -0.8, 0) - Dudukan berat di bawah
-│   └─ Warna: Hitam (0.2, 0.2, 0.2)
-│
-├─ <strong style="color: #34495e;">2. Stand/Pole (Static)</strong>
-│   ├─ Geometri: Cylinder Y-axis (r=0.05, h=1.0)
-│   ├─ Posisi: (0, -0.3, 0) - Tiang vertikal ke atas
-│   └─ Warna: Abu-abu gelap (0.3, 0.3, 0.3)
-│
-├─ <strong style="color: #34495e;">3. Motor Housing (Static)</strong>
-│   ├─ Geometri: Cylinder Z-axis (r=0.3, h=0.25)
-│   ├─ Posisi: (0, 0.2, -0.15) - Badan motor belakang
-│   └─ Warna: Abu-abu gelap (0.25)
-│
-├─ <strong style="color: #34495e;">4. Frame Guard (Static)</strong>
-│   ├─ Ring Luar: Circle Ring (r=0.55, thickness=0.02)
-│   ├─ Ring Tengah: Circle Ring (r=0.35, thickness=0.015)
-│   ├─ 8 Spokes: Radial dari pusat ke ring luar
-│   ├─ Posisi: (0, 0.2, 0.05) - Di depan motor housing
-│   └─ Warna: Hitam (0.15, 0.15, 0.15)
-│
-└─ <strong style="color: #e74c3c;">Rotating Assembly</strong> (Berputar)
-    ├─ <strong>Transform: rotate(bladeAngle, Z-axis)</strong> ← Animasi
-    │
-    ├─ <strong style="color: #95a5a6;">5. Hub/Rotor</strong>
-    │   ├─ Geometri: Cylinder Z-axis (r=0.08, h=0.06)
-    │   ├─ Posisi: (0, 0.25, 0.0) - Pas di tengah blade
-    │   ├─ Warna: Abu-abu (0.35)
-    │   └─ Rotasi: 360° di tempat (tidak ikut blade)
-    │
-    │
-    ├─ <strong style="color: #3498db;">6. Blade 1</strong>
-    │   ├─ Offset Rotasi: 0°
-    │   ├─ Posisi: Y=0.25 (sama dengan rotor)
-    │   ├─ Radius: 0.08 → 0.5 (trapezoid)
-    │   ├─ Width: 0.12 (tapered)
-    │   └─ Warna: Abu-abu terang (0.5)
-    │
-    ├─ <strong style="color: #3498db;">Blade 2</strong>
-    │   ├─ Offset Rotasi: 90°
-    │   └─ Posisi: Y=0.25 (sama dengan rotor)
-    │
-    ├─ <strong style="color: #3498db;">Blade 3</strong>
-    │   ├─ Offset Rotasi: 180°
-    │   └─ Posisi: Y=0.25 (sama dengan rotor)
-    │
-    └─ <strong style="color: #3498db;">Blade 4</strong>
-        ├─ Offset Rotasi: 270°
-        └─ Posisi: Y=0.25 (sama dengan rotor)
-
-<strong>Catatan:</strong>
-- Model mengikuti referensi: Old Table Fan (Sketchfab)
-- Camera: (1.5, 0.5, 2.5) - perspektif samping-depan
-- Hub/Rotor dan semua Blade berada di posisi Y=0.25 (tepat bersama)
-- Blade berputar pada sumbu Z sesuai slider kecepatan
-- Hub/Rotor berputar 360° konstan di tempat (tidak ikut blade)
-- Yaw rotation memutar seluruh kipas (kecuali base dan stand)
-- Base di bawah, stand vertikal, motor dan frame di tengah atas
-      </pre> -->
+        <strong>Fan Assembly</strong>
+        │
+        ├── Motor Housing
+        │
+        ├── Hanging Rod
+        │
+        ├── Frame Guard
+        │   ├── Front Ring (outer)
+        │   ├── Front Ring (inner)
+        │   ├── 8 Spokes
+        │   └── Back Cover (disk)
+        │
+        ├── Hub/Rotor (rotating 360°)
+        │
+        └── Blades (rotating)
+          ├── Blade 1 (0°)
+          ├── Blade 2 (90°)
+          ├── Blade 3 (180°)
+          └── Blade 4 (270°)
+      </pre>
 
       <div class="controls">
         <div class="control-group">
@@ -110,15 +68,6 @@
           <label><strong>Yaw Rotation (Putar Kipas):</strong></label><br/>
           <input id="yaw" type="range" min="-180" max="180" value="0" />
           <span id="yawVal">0</span>°
-        </div>
-
-        <div class="control-group">
-          <label><strong>Theme:</strong></label><br/>
-          <select id="themeSelect">
-            <option value="classic">Classic Black</option>
-            <option value="modern">Modern Silver</option>
-            <option value="retro">Retro Bronze</option>
-          </select>
         </div>
 
         <div class="control-group">
