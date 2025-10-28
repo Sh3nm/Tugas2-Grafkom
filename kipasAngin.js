@@ -128,18 +128,23 @@ function buildFanGeometry() {
 
   // 1. BASE - Dudukan berat berbentuk cakram di bawah
   var start = points.length;
-  addCylinderZ(0.4, 0.1, 24, vec3(0, -0.8, 0), vec4(0.2, 0.2, 0.2, 1));
-  baseVertices = points.length - start;
+//   addCylinderZ(0.4, 0.1, 24, vec3(0, -0.8, 0), vec4(0.2, 0.2, 0.2, 1));
+//   baseVertices = points.length - start;
 
   // 2. STAND/POLE - Tiang vertikal penopang
   start = points.length;
-  addCylinderY(0.05, 1.0, 16, vec3(0, -0.3, 0), vec4(0.3, 0.3, 0.3, 1));
-  hangingRodVertices = points.length - start;
+//   addCylinderY(0.05, 1.0, 16, vec3(0, -0.3, 0), vec4(0.3, 0.3, 0.3, 1));
+//   hangingRodVertices = points.length - start;
 
   // 3. MOTOR HOUSING - Badan motor belakang (silinder besar)
   start = points.length;
   addCylinderZ(0.3, 0.25, 24, vec3(0, 0.2, -0.15), vec4(0.25, 0.25, 0.25, 1));
   motorHousingVertices = points.length - start;
+
+  // 3.5 HANGING ROD - Penyangga menggantung dari atas, menempel di belakang motor
+  start = points.length;
+  addCylinderY(0.02, 1.5, 12, vec3(0, 0.95, -0.15), vec4(0.3, 0.3, 0.3, 1));
+  hangingRodVertices = points.length - start;
 
   // 4. FRAME GUARD - Pelindung kawat depan
   start = points.length;
@@ -472,9 +477,9 @@ function addFrameSpokes(radius, numSpokes, center, color) {
 // Memiliki kelengkungan/pitch angle untuk efek aerodinamis
 function addCurvedBlade(color) {
   let segments = 12;
-  let radiusStart = 0.15;
-  let radiusEnd = 0.9;
-  let width = 0.18;
+  let radiusStart = 0.25;
+  let radiusEnd = 0.25;
+  let width = 0;
   let curve = 0.25;
   for (let i = 0; i < segments; i++) {
     let t1 = i / segments, t2 = (i+1)/segments;
@@ -566,9 +571,7 @@ function addBladeXY(radiusStart, radiusEnd, width, color) {
   }
 }
 
-// ========================================
 // RENDER LOOP - Table Fan Complete Structure
-// ========================================
 function render() {
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
@@ -588,10 +591,10 @@ function render() {
   offset += baseVertices;
 
   // ===== 2. STAND/POLE (Static - tiang vertikal, tidak ikut yaw) =====
-  gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix));
-  gl.uniformMatrix3fv(normalMatrixLoc, false, flatten(normalMatrix(modelViewMatrix)));
-  if (hangingRodVertices>0) gl.drawArrays(gl.TRIANGLES, offset, hangingRodVertices);
-  offset += hangingRodVertices;
+//   gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix));
+//   gl.uniformMatrix3fv(normalMatrixLoc, false, flatten(normalMatrix(modelViewMatrix)));
+//   if (hangingRodVertices>0) gl.drawArrays(gl.TRIANGLES, offset, hangingRodVertices);
+//   offset += hangingRodVertices;
 
   // Yaw transformation untuk semua komponen kipas (motor housing, frame, hub, blade)
   // Rotasi pada sumbu Y dengan pusat di (0, 0.2, 0) - posisi motor housing
@@ -609,6 +612,12 @@ function render() {
   gl.uniformMatrix3fv(normalMatrixLoc, false, flatten(normalMatrix(yawMV)));
   if (motorHousingVertices>0) gl.drawArrays(gl.TRIANGLES, offset, motorHousingVertices);
   offset += motorHousingVertices;
+
+  // ===== 3.5 HANGING ROD (Dengan yaw rotation) =====
+  gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(yawMV));
+  gl.uniformMatrix3fv(normalMatrixLoc, false, flatten(normalMatrix(yawMV)));
+  if (hangingRodVertices>0) gl.drawArrays(gl.TRIANGLES, offset, hangingRodVertices);
+  offset += hangingRodVertices;
 
   // ===== 4. FRAME GUARD (Dengan yaw rotation) =====
   gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(yawMV));
@@ -631,10 +640,12 @@ function render() {
   if (rotorVertices>0) gl.drawArrays(gl.TRIANGLES, offset, rotorVertices);
   offset += rotorVertices;
 
-  // ===== 6. BLADES (Dengan yaw + blade rotation, 4 blade offset 0°, 90°, 180°, 270°) =====
+  // ===== 6. BLADES (Dengan yaw + translasi ke atas + blade rotation, 4 blade offset 0°, 90°, 180°, 270°) =====
   let numBlades = 4;
   for (let i=0; i<numBlades; i++) {
-    let bladeMV = mult(yawMV, rotate(bladeAngle + i*90, vec3(0,0,1)));
+    // Translasi ke atas (Y=0.25) untuk sejajarkan dengan rotor, lalu rotasi blade
+    let bladeTransform = mult(translate(0, 0.25, 0), rotate(bladeAngle + i*90, vec3(0,0,1)));
+    let bladeMV = mult(yawMV, bladeTransform);
     gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(bladeMV));
     gl.uniformMatrix3fv(normalMatrixLoc, false, flatten(normalMatrix(bladeMV)));
     if (bladeVertices>0) gl.drawArrays(gl.TRIANGLES, offset, bladeVertices);
