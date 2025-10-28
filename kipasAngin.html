@@ -12,15 +12,18 @@
     <div class="info">
       <h3>Anggota Kelompok</h3>
       <ul>
-        <li>Ammar Ghozy Tanumijaya - NRP 1</li>
-        <li>Huraira Shenmue Mahanee - NRP 2</li>
+        <li>Ammar Ghozy Tanumijaya - 5025231203</li>
+        <li>Huraira Shenmue Mahanee - 5025231216</li>
       </ul>
 
       <h4>Foto objek asli</h4>
-      <img src="assets/kipasAngin.jpg" alt="Foto kipas asli" style="max-width: 280px;"/>
+      <img src="Media/Foto Kipas.jpg" alt="Foto Kipas Asli" style="max-width: 280px;"/>
 
       <h4>Video objek asli</h4>
-      <p style="font-size: 12px; color: #666;">Video dapat ditambahkan di folder assets/</p>
+      <p style="font-size: 12px; color: #666;"></p>
+      <video controls style="max-width: 280px;">
+        <source src="Media/Video Kipas.mp4" type="video/mp4">
+      </video>
 
       <h4>Desain Tree Hierarchical</h4>
       <pre style="font-size: 11px; line-height: 1.5; background: #f5f5f5; padding: 12px; border-radius: 5px;">
@@ -88,14 +91,74 @@
       </pre> -->
 
       <div class="controls">
-        <label><strong>Kecepatan Blade:</strong></label><br/>
-        <input id="speed" type="range" min="0" max="60" value="30" />
-        <span id="speedVal">30</span>
+        <div class="control-group">
+          <label><strong>Kecepatan Blade:</strong></label><br/>
+          <div class="speed-buttons">
+            <button id="speedLow">Low</button>
+            <button id="speedMed">Medium</button>
+            <button id="speedHigh">High</button>
+          </div>
+          <input id="speed" type="range" min="0" max="60" value="30" />
+          <span id="speedVal">30</span>
+          <div class="rpm-meter">
+            <label>RPM:</label>
+            <span id="rpmValue">0</span>
+          </div>
+        </div>
         
-        <br/><br/>
-        <label><strong>Yaw Rotation (Putar Kipas):</strong></label><br/>
-        <input id="yaw" type="range" min="-180" max="180" value="0" />
-        <span id="yawVal">0</span>°
+        <div class="control-group">
+          <label><strong>Yaw Rotation (Putar Kipas):</strong></label><br/>
+          <input id="yaw" type="range" min="-180" max="180" value="0" />
+          <span id="yawVal">0</span>°
+        </div>
+
+        <div class="control-group">
+          <label><strong>Theme:</strong></label><br/>
+          <select id="themeSelect">
+            <option value="classic">Classic Black</option>
+            <option value="modern">Modern Silver</option>
+            <option value="retro">Retro Bronze</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label><strong>Mode:</strong></label><br/>
+          <button id="toggleNightMode">Toggle Night Mode</button>
+        </div>
+
+        <div class="control-group">
+          <label><strong>Sound:</strong></label><br/>
+          <input type="checkbox" id="soundToggle" checked>
+          <label for="soundToggle">Enable Fan Sound</label>
+        </div>
+
+        <div class="control-group">
+          <label><strong>Oscillation:</strong></label><br/>
+          <input type="checkbox" id="oscillateToggle">
+          <label for="oscillateToggle">Enable Oscillation</label>
+          <div class="oscillation-controls">
+            <label>Speed:</label>
+            <input type="range" id="oscillateSpeed" min="1" max="10" value="5">
+            <label>Range:</label>
+            <input type="range" id="oscillateRange" min="30" max="120" value="60">
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label><strong>Camera Control:</strong></label><br/>
+          <button id="resetCamera">Reset View</button>
+          <div class="camera-info">
+            <span>Click and drag on canvas to orbit camera</span>
+            <br>
+            <span>Use mouse wheel to zoom</span>
+          </div>
+        </div>
+
+        <div class="performance-stats">
+          <span>FPS: <span id="fpsCounter">60</span></span>
+          <br>
+          <span>Vertices: <span id="vertexCount">0</span></span>
+        </div>
       </div>
     </div>
 
