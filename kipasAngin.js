@@ -16,6 +16,68 @@ var yaw = 0;             // rotasi badan
 var bladeSpeed = 30;     // kecepatan rotasi blade
 var bladeAngle = 0;      // sudut rotasi blade
 var rotorAngle = 0;      // sudut rotasi rotor (berputar sendiri 360°)
+var targetSpeed = 30;    // kecepatan target untuk momentum
+var currentSpeed = 5;   // kecepatan aktual
+var isNightMode = false; // mode malam
+var fanSound = null;     // audio untuk suara kipas
+var lastSpeedChange = 0; // waktu terakhir perubahan kecepatan
+
+// Camera control
+var cameraRadius = 3.0;
+var cameraTheta = 0.0;
+var cameraPhi = Math.PI/4;
+var isDragging = false;
+var lastMouseX = 0;
+var lastMouseY = 0;
+var zoomLevel = 1.0;
+
+// Oscillation
+var isOscillating = false;
+var oscillateSpeed = 1;
+var oscillateRange = 60;
+var oscillateAngle = 0;
+
+// Performance monitoring
+var frameCount = 0;
+var lastFPSUpdate = 0;
+var currentFPS = 60;
+
+// Level of Detail
+var currentLOD = 'high';
+var LODLevels = {
+    high: { segments: 24, spokes: 8 },
+    medium: { segments: 16, spokes: 6 },
+    low: { segments: 12, spokes: 4 }
+};
+
+// Motion blur
+var isMotionBlurEnabled = true;
+var blurAmount = 0;
+
+// theme colors
+var themes = {
+    classic: {
+        base: vec4(0.2, 0.2, 0.2, 1),
+        frame: vec4(0.15, 0.15, 0.15, 1),
+        blade: vec4(0.5, 0.5, 0.5, 1),
+        motor: vec4(0.25, 0.25, 0.25, 1),
+        rod: vec4(0.3, 0.3, 0.3, 1)
+    },
+    modern: {
+        base: vec4(0.7, 0.7, 0.7, 1),
+        frame: vec4(0.6, 0.6, 0.6, 1),
+        blade: vec4(0.8, 0.8, 0.8, 1),
+        motor: vec4(0.65, 0.65, 0.65, 1),
+        rod: vec4(0.7, 0.7, 0.7, 1)
+    },
+    retro: {
+        base: vec4(0.6, 0.4, 0.2, 1),
+        frame: vec4(0.5, 0.3, 0.1, 1),
+        blade: vec4(0.7, 0.5, 0.3, 1),
+        motor: vec4(0.55, 0.35, 0.15, 1),
+        rod: vec4(0.6, 0.4, 0.2, 1)
+    }
+};
 
 // jumlah vertex tiap bagian (untuk drawArrays dengan offset)
 var baseVertices = 0;
@@ -25,21 +87,147 @@ var frameVertices = 0;
 var rotorVertices = 0;
 var bladeVertices = 0;
 
+// Camera control functions
+function initCameraControls() {
+    canvas.addEventListener('mousedown', function(e) {
+        isDragging = true;
+        lastMouseX = e.clientX;
+        lastMouseY = e.clientY;
+    });
+
+    document.addEventListener('mousemove', function(e) {
+        if (!isDragging) return;
+        
+        var deltaX = e.clientX - lastMouseX;
+        var deltaY = e.clientY - lastMouseY;
+        
+        cameraTheta += deltaX * 0.01;
+        cameraPhi = Math.max(0.1, Math.min(Math.PI - 0.1, cameraPhi + deltaY * 0.01));
+        
+        lastMouseX = e.clientX;
+        lastMouseY = e.clientY;
+    });
+
+    document.addEventListener('mouseup', function() {
+        isDragging = false;
+    });
+
+    canvas.addEventListener('wheel', function(e) {
+        e.preventDefault();
+        zoomLevel = Math.max(0.5, Math.min(2.0, zoomLevel + e.deltaY * -0.001));
+    });
+
+    document.getElementById('resetCamera').onclick = function() {
+        cameraRadius = 3.0;
+        cameraTheta = 0.0;
+        cameraPhi = Math.PI/4;
+        zoomLevel = 1.0;
+    };
+}
+
+// Performance monitoring
+function updateFPS() {
+    const now = performance.now();
+    if (now - lastFPSUpdate >= 1000) { // Update every second
+        currentFPS = frameCount;
+        document.getElementById('fpsCounter').textContent = currentFPS;
+        frameCount = 0;
+        lastFPSUpdate = now;
+        
+        // Automatic LOD adjustment based on FPS
+        if (currentFPS < 30 && currentLOD !== 'low') {
+            currentLOD = 'low';
+            buildFanGeometry();
+            initBuffers();
+        } else if (currentFPS > 55 && currentLOD === 'low') {
+            currentLOD = 'high';
+            buildFanGeometry();
+            initBuffers();
+        }
+    }
+    frameCount++;
+}
+
+// Motion blur effect
+function updateMotionBlur() {
+    if (!isMotionBlurEnabled) return;
+    
+    blurAmount = Math.min(currentSpeed / 60 * 2, 2);
+    canvas.style.filter = `blur(${blurAmount}px)`;
+}
+
+// Inisialisasi audio
+function initAudio() {
+    fanSound = new Audio();
+    fanSound.src = 'Media/fan-sound.mp3';  // Pastikan file audio tersedia
+    fanSound.loop = true;
+}
+
+// Update RPM display
+function updateRPM() {
+    const rpm = Math.round(currentSpeed * 60);  // Konversi ke RPM
+    document.getElementById('rpmValue').textContent = rpm;
+}
+
+// Update fan sound
+function updateFanSound() {
+    if (!fanSound) return;
+    
+    if (document.getElementById('soundToggle').checked && currentSpeed > 0) {
+        fanSound.playbackRate = 0.5 + (currentSpeed / 60) * 1.5;  // Adjust pitch based on speed
+        fanSound.volume = currentSpeed / 60;  // Adjust volume based on speed
+        
+        if (fanSound.paused) {
+            fanSound.play().catch(e => console.log("Audio playback failed:", e));
+        }
+    } else {
+        fanSound.pause();
+    }
+}
+
+// Toggle night mode
+function toggleNightMode() {
+    isNightMode = !isNightMode;
+    document.body.classList.toggle('night-mode');
+    gl.clearColor(isNightMode ? 0.1 : 1, isNightMode ? 0.1 : 1, isNightMode ? 0.1 : 1, 1);
+}
+
 window.onload = function init() {
-  canvas = document.getElementById("gl-canvas");
-  gl = canvas.getContext("webgl2");
-  if (!gl) {
-    alert("WebGL2 tidak tersedia di browser ini");
-    return;
-  }
+    canvas = document.getElementById("gl-canvas");
+    gl = canvas.getContext("webgl2");
+    if (!gl) {
+        alert("WebGL2 tidak tersedia di browser ini");
+        return;
+    }
 
-  gl.viewport(0, 0, canvas.width, canvas.height);
-  gl.clearColor(1, 1, 1, 1);
-  gl.enable(gl.DEPTH_TEST);
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    gl.clearColor(1, 1, 1, 1);
+    gl.enable(gl.DEPTH_TEST);
 
-  // gunakan 1 shader saja
-  program = initShaders(gl, "vertex-shader", "fragment-shader");
-  gl.useProgram(program);
+    // Initialize features
+    initAudio();
+    initCameraControls();
+
+    // Initialize performance monitoring
+    lastFPSUpdate = performance.now();
+    document.getElementById('vertexCount').textContent = points.length;
+
+    // Oscillation controls
+    document.getElementById('oscillateToggle').onchange = function(e) {
+        isOscillating = e.target.checked;
+    };
+    
+    document.getElementById('oscillateSpeed').oninput = function(e) {
+        oscillateSpeed = parseFloat(e.target.value);
+    };
+    
+    document.getElementById('oscillateRange').oninput = function(e) {
+        oscillateRange = parseFloat(e.target.value);
+    };
+
+    // gunakan 1 shader saja
+    program = initShaders(gl, "vertex-shader", "fragment-shader");
+    gl.useProgram(program);
 
   // build geometry and buffers
   buildFanGeometry();
@@ -68,8 +256,49 @@ window.onload = function init() {
   var speedEl = document.getElementById("speed");
   var speedVal = document.getElementById("speedVal");
   speedEl.oninput = function(e) {
-    bladeSpeed = parseFloat(e.target.value);
+    targetSpeed = parseFloat(e.target.value);
     speedVal.textContent = e.target.value;
+    lastSpeedChange = Date.now();
+  };
+
+  // Speed preset buttons
+  document.getElementById("speedLow").onclick = function() {
+    targetSpeed = 20;
+    speedEl.value = targetSpeed;
+    speedVal.textContent = targetSpeed;
+    lastSpeedChange = Date.now();
+  };
+  
+  document.getElementById("speedMed").onclick = function() {
+    targetSpeed = 40;
+    speedEl.value = targetSpeed;
+    speedVal.textContent = targetSpeed;
+    lastSpeedChange = Date.now();
+  };
+  
+  document.getElementById("speedHigh").onclick = function() {
+    targetSpeed = 60;
+    speedEl.value = targetSpeed;
+    speedVal.textContent = targetSpeed;
+    lastSpeedChange = Date.now();
+  };
+
+  // Theme selector
+  document.getElementById("themeSelect").onchange = function(e) {
+    buildFanGeometry(); // Rebuild with new colors
+    initBuffers();
+  };
+
+  // Night mode toggle
+  document.getElementById("toggleNightMode").onclick = toggleNightMode;
+
+  // Sound toggle
+  document.getElementById("soundToggle").onchange = function(e) {
+    if (e.target.checked) {
+      updateFanSound();
+    } else {
+      if (fanSound) fanSound.pause();
+    }
   };
 
   var yawEl = document.getElementById("yaw");
@@ -575,8 +804,25 @@ function addBladeXY(radiusStart, radiusEnd, width, color) {
 function render() {
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-  // Kamera sedikit dari samping depan untuk melihat perspektif 3D
-  var eye = vec3(1.5, 0.5, 2.5);
+  // Update oscillation
+  if (isOscillating) {
+    oscillateAngle += oscillateSpeed * 0.02;
+    yaw = Math.sin(oscillateAngle) * oscillateRange;
+    document.getElementById('yaw').value = yaw;
+    document.getElementById('yawVal').textContent = Math.round(yaw);
+  }
+
+  // Calculate camera position based on spherical coordinates
+  var x = cameraRadius * Math.sin(cameraPhi) * Math.cos(cameraTheta);
+  var y = cameraRadius * Math.cos(cameraPhi);
+  var z = cameraRadius * Math.sin(cameraPhi) * Math.sin(cameraTheta);
+  
+  // Apply zoom
+  x *= zoomLevel;
+  y *= zoomLevel;
+  z *= zoomLevel;
+  
+  var eye = vec3(x, y, z);
   var at = vec3(0, 0, 0);
   var up = vec3(0, 1, 0);
   var viewMatrix = lookAt(eye, at, up);
@@ -651,9 +897,27 @@ function render() {
     if (bladeVertices>0) gl.drawArrays(gl.TRIANGLES, offset, bladeVertices);
   }
 
+  // Update kecepatan dengan momentum
+  const timeSinceChange = (Date.now() - lastSpeedChange) / 1000; // konversi ke detik
+  const acceleration = 0.5; // Kecepatan perubahan
+  
+  if (Math.abs(currentSpeed - targetSpeed) > 0.1) {
+    if (currentSpeed < targetSpeed) {
+      currentSpeed = Math.min(targetSpeed, currentSpeed + acceleration);
+    } else {
+      currentSpeed = Math.max(targetSpeed, currentSpeed - acceleration);
+    }
+  }
+
   // Update sudut rotasi
-  bladeAngle += bladeSpeed * 0.15;  // Blade berputar sesuai kecepatan slider
-  rotorAngle += 2.0;                // Rotor berputar konstan 360° (2 derajat per frame)
+  bladeAngle += currentSpeed * 0.15;  // Blade berputar sesuai kecepatan aktual
+  rotorAngle += 2.0;                  // Rotor berputar konstan 360° (2 derajat per frame)
+
+  // Update displays dan efek
+  updateRPM();
+  updateFanSound();
+  updateFPS();
+  updateMotionBlur();
 
   requestAnimationFrame(render);
 }
