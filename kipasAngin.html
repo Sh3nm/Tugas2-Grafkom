@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>Animasi Kipas - Kelompok X</title>
+  <title>Animasi Kipas</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -39,9 +39,9 @@
     │   ├── 8 Spokes
     │   └── Back Cover (disk)
     │
-    ├── Hub/Rotor (rotating 360°)
+    ├── Hub/Rotor
     │
-    └── Blades (rotating)
+    └── Blades
       ├── Blade 1 (0°)
       ├── Blade 2 (90°)
       ├── Blade 3 (180°)
@@ -56,8 +56,8 @@
             <button id="speedMed">Medium</button>
             <button id="speedHigh">High</button>
           </div>
-          <input id="speed" type="range" min="0" max="60" value="30" />
-          <span id="speedVal">30</span>
+          <input id="speed" type="range" min="0" max="60" value="0" />
+          <span id="speedVal">0</span>
           <div class="rpm-meter">
             <label>RPM:</label>
             <span id="rpmValue">0</span>
@@ -77,7 +77,7 @@
 
         <div class="control-group">
           <label><strong>Sound:</strong></label><br/>
-          <input type="checkbox" id="soundToggle" checked>
+          <input type="checkbox" id="soundToggle">
           <label for="soundToggle">Enable Fan Sound</label>
         </div>
 
