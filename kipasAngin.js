@@ -13,11 +13,11 @@ var modelViewMatrixLoc, normalMatrixLoc;
 
 // kontrol user
 var yaw = 0;             // rotasi badan
-var bladeSpeed = 30;     // kecepatan rotasi blade
+var bladeSpeed = 0;     // kecepatan rotasi blade
 var bladeAngle = 0;      // sudut rotasi blade
 var rotorAngle = 0;      // sudut rotasi rotor (berputar sendiri 360°)
-var targetSpeed = 30;    // kecepatan target untuk momentum
-var currentSpeed = 5;   // kecepatan aktual
+var targetSpeed = 0;    // kecepatan target untuk momentum
+var currentSpeed = 0;   // kecepatan aktual
 var isNightMode = false; // mode malam
 var fanSound = null;     // audio untuk suara kipas
 var lastSpeedChange = 0; // waktu terakhir perubahan kecepatan
@@ -266,14 +266,19 @@ window.onload = function init() {
   // Night mode toggle
   document.getElementById("toggleNightMode").onclick = toggleNightMode;
 
-  // Sound toggle
-  document.getElementById("soundToggle").onchange = function(e) {
-    if (e.target.checked) {
-      updateFanSound();
-    } else {
-      if (fanSound) fanSound.pause();
-    }
-  };
+  // Sound toggle - ensure default is OFF on page load
+  var soundToggleEl = document.getElementById("soundToggle");
+  if (soundToggleEl) {
+    // Force initial unchecked state (in case HTML had it set)
+    soundToggleEl.checked = false;
+    soundToggleEl.onchange = function(e) {
+      if (e.target.checked) {
+        updateFanSound();
+      } else {
+        if (fanSound) fanSound.pause();
+      }
+    };
+  }
 
   var yawEl = document.getElementById("yaw");
   var yawVal = document.getElementById("yawVal");
